@@ -1,3 +1,3 @@
-# JavaFXTemplate
+# GEOFX
 
-Plantilla para nuevos proyectos JavaFX con Maven.
+GeoFx con JavaFx y ipapi apirest.
