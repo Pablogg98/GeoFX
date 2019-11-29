@@ -5,8 +5,8 @@ import java.net.URL;
 import java.util.ResourceBundle;
 
 import dad.javafx.geofx.client.IpApiService;
-import dad.javafx.geofx.client.IpApiServiceException;
 import dad.javafx.geofx.client.json.Raiz;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -26,6 +26,10 @@ public class GeoController implements Initializable {
 	// model
 
 	private GeoModel model = new GeoModel();;
+
+	private Task<Void> tarea;
+	private Raiz raiz = new Raiz();
+	IpApiService service = new IpApiService();
 
 	// view
 	@FXML
@@ -134,45 +138,75 @@ public class GeoController implements Initializable {
 	}
 
 	private void actualizar(String ip) {
-		
-			Raiz raiz = new Raiz();
-			IpApiService service = new IpApiService();
+
+		tarea = new Task<Void>() {
+			@Override
+			protected Void call() throws Exception {
+				raiz = service.listRaizIp(ip);
+				return null;
+			}
+		};
+
+		tarea.setOnSucceeded(e -> {
 			try {
-			raiz = service.listRaizIp(ip);
-			model.setIpTxt(raiz.getIp());
-			model.setLatitud("" + raiz.getLatitude());
-			model.setLongitud("" + raiz.getLongitude());
-			model.setIpLocation(raiz.getCountryName() + " (" + raiz.getCountryCode() + ")");
-			Image img = new Image(
-					"https://raw.githubusercontent.com/dam-dad/Flags/master/64/" + raiz.getCountryCode() + ".png");
-			flagImageView.setImage(img);
-			model.setCity(raiz.getCity());
-			model.setZipCode(raiz.getZip());
-			model.setLanguage(raiz.getLocation().getLanguages().get(0).getName());
-			model.setTimeZone("" + raiz.getTimeZone());
-			model.setCallCode(raiz.getLocation().getCallingCode());
-			model.setCurrency("");
-		} catch (IpApiServiceException | NullPointerException e) {
+				model.setIpTxt(raiz.getIp());
+				model.setLatitud("" + raiz.getLatitude());
+				model.setLongitud("" + raiz.getLongitude());
+				model.setIpLocation(raiz.getCountryName() + " (" + raiz.getCountryCode() + ")");
+				Image img = new Image(
+						"https://raw.githubusercontent.com/dam-dad/Flags/master/64/" + raiz.getCountryCode() + ".png");
+				flagImageView.setImage(img);
+				model.setCity(raiz.getCity());
+				model.setZipCode(raiz.getZip());
+				model.setLanguage(raiz.getLocation().getLanguages().get(0).getName());
+				model.setTimeZone("-" + raiz.getTimeZone());
+				model.setCallCode(raiz.getLocation().getCallingCode());
+				model.setCurrency("");
+			} catch (Exception e1) {
+				model.setIpTxt("");
+				model.setLatitud("-");
+				model.setLongitud("-");
+				model.setIpLocation("-");
+				try {
+					flagImageView.setImage(new Image(""));
+				} catch (Exception e2) { }
+				model.setCity("-");
+				model.setZipCode("-");
+				model.setLanguage("-");
+				model.setTimeZone("-");
+				model.setCallCode("-");
+				model.setCurrency("-");
+				Alert alert = new Alert(AlertType.ERROR);
+				alert.setTitle("Error");
+				alert.setHeaderText("Algo no fue bien");
+				alert.setContentText("IP no válida");
+				alert.showAndWait();
+			}
+		});
+
+		tarea.setOnFailed(e -> {
 			model.setIpTxt("");
 			model.setLatitud("-");
 			model.setLongitud("-");
 			model.setIpLocation("-");
-//			Image img = new Image(
-//					"-");
-//			flagImageView.setImage(img);
+			try {
+				flagImageView.setImage(new Image(""));
+			} catch (Exception e1) { }
 			model.setCity("-");
 			model.setZipCode("-");
 			model.setLanguage("-");
 			model.setTimeZone("-");
 			model.setCallCode("-");
 			model.setCurrency("-");
-
+			e.getSource().getException().printStackTrace();
 			Alert alert = new Alert(AlertType.ERROR);
-			alert.setTitle("DAD");
-			alert.setHeaderText("Error");
-			alert.setContentText("Error al conectar o IP inválida.");
+			alert.setTitle("Error");
+			alert.setHeaderText("Algo no fue bien");
+			alert.setContentText(e.getSource().getException().getMessage());
 			alert.showAndWait();
-		}
+		});
+
+		new Thread(tarea).start();
 	}
 
 	@FXML

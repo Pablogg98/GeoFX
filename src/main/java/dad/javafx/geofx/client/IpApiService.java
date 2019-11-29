@@ -16,9 +16,6 @@ public class IpApiService {
 			Raiz raiz = Unirest.get("http://api.ipapi.com/check?access_key=8821b46213c0bd6a36125fb2cd2a95c7&format=1").asObject(Raiz.class)
 					.getBody();
 
-//			if (!breeds..equals("success"))
-//				throw new IpApiServiceException("Error retrieving breeds list");
-
 			return raiz;
 		} catch (UnirestException e) {
 			throw new IpApiServiceException();
